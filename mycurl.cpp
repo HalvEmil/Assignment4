@@ -243,9 +243,36 @@ int main(int argc, char* argv[]) {
     http::response<http::dynamic_body> res;
     http::read(stream, buffer, res);
 
-    if(res.result_int() == 301 || res.result_int() == 302){
+    //int redirects = 0;
+
+    while((res.result_int() == 301 || res.result_int() == 302) && redirects < max_redirects){
         auto location = res.base().at(http::field::location);
-        std::cout << "REDIRECTED " << location << std::endl;
+        std::cout << "redirecting " << location << std::endl;
+
+        Url newUrl;
+        std::string error;
+        if(!parse_url(location.to_string(), newUrl, error)){
+            std::cerr << "Failed to parse redirect URL: " << error << std::endl;
+            break;
+        }
+
+        tcp::resolver resolver(ioc);
+        beast::tcp_stream stream(ioc);
+        auto const results = resolver.resolve(newUrl.host, newUrl.port);
+
+        stream.connect(results);
+
+        http::request<http::string_body> req{http::verb::get, url.path, 11};
+        req.set(http::field::host, url.host);
+        req.set(http::field::user_agent, "mycurl/1.0");
+
+        http::write(stream, req);
+
+        beast::flat_buffer buffer;
+        http::read(stream, buffer, res);
+
+
+        redirects++;
     }
 
     std::cout << res << std::endl;
