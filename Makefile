@@ -5,7 +5,7 @@
 CXX      := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -O2
 LDFLAGS  :=
-LDLIBS   := -lssl -lcrypto
+LDLIBS   := -lssl -lcrypto -lboost_system -lpthread
 TARGET   := mycurl
 SRC      := mycurl.cpp
 
