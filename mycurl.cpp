@@ -22,8 +22,18 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
 
+
+namespace beast = boost::beast;
+namespace http = beast::http;
+namespace net = boost::asio;
 namespace fs = std::filesystem;
+
+using tcp = net::ip::tcp;
 
 // Return current local time formatted as "yy-mm-dd hh:mm:ss"
 static std::string now_local_yy_mm_dd_hh_mm_ss()
@@ -214,6 +224,33 @@ int main(int argc, char* argv[]) {
     
     /* do stuff */
     int resp_body_size=0xFACCE;
+
+    net::io_context ioc;
+    tcp::resolver resolver(ioc);
+    beast::tcp_stream stream(ioc);
+
+    auto const results = resolver.resolve(url.host, url.port);
+
+    stream.connect(results);
+    
+    http::request<http::string_body> req{http::verb::get, url.path, 11};
+    req.set(http::field::host, url.host);
+    req.set(http::field::user_agent, "mycurl/1.0");
+
+    http::write(stream, req);
+
+    beast::flat_buffer buffer;
+    http::response<http::dynamic_body> res;
+    http::read(stream, buffer, res);
+
+    if(res.result_int() == 301 || res.result_int() == 302){
+        auto location = res.base().at(http::field::location);
+        std::cout << "REDIRECTED " << location << std::endl;
+    }
+
+    std::cout << res << std::endl;
+    beast::error_code ec;
+    stream.socket().shutdown(tcp::socket::shutdown_both, ec);
     
 
     auto t2 = clock::now();
@@ -223,7 +260,7 @@ int main(int argc, char* argv[]) {
               << " [s] " << (8*resp_body_size/diff.count())/1e6 << " [Mbps]\n";
 
 
-
+    
     
     return EXIT_SUCCESS;
 }
