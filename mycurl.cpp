@@ -305,6 +305,10 @@ int main(int argc, char* argv[]) {
         redirects++;
     }
 
+    if(redirects == 10){
+        std::cerr << "ERROR: To many redirects" << std::endl;
+    }
+
     fs::path output_path(output_file);
     std::ofstream ofs(output_path, std::ios::binary);
     // //std::cout << res << std::endl;
