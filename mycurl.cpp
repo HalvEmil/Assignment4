@@ -305,8 +305,9 @@ int main(int argc, char* argv[]) {
         redirects++;
     }
 
-    if(redirects == 10){
+    if(redirects == max_redirects - 1){
         std::cerr << "ERROR: To many redirects" << std::endl;
+        return EXIT_FAILURE;
     }
 
     fs::path output_path(output_file);
