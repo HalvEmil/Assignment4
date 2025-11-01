@@ -279,7 +279,7 @@ int main(int argc, char* argv[]) {
     request(url, ioc, resolver, buffer, res);
     std::cout << res.base() << std::endl;
 
-    while((res.result_int() == 301 || res.result_int() == 302) && redirects < max_redirects){
+    while((res.result_int() == 301 || res.result_int() == 302)){
         if(redirects >= max_redirects ){
         std::cerr << "ERROR: To many redirects" << std::endl;
         return EXIT_FAILURE;
