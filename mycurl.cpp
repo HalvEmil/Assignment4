@@ -314,7 +314,7 @@ int main(int argc, char* argv[]) {
         res = {};
 
         try{
-            request(url, ioc, resolver, buffer, res);
+            request(newUrl, ioc, resolver, buffer, res);
             std::cout << res.base() << std::endl;
         }
             catch(const std::exception &e){
