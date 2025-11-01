@@ -311,8 +311,8 @@ int main(int argc, char* argv[]) {
     // for(auto const &field : res){
     //     ofs << field.name_string() << ": " << field.value() << std::endl;
     // }
-    ofs << res;
-    //ofs << beast::buffers_to_string(res.body().data());
+    //ofs << res;
+    ofs << beast::buffers_to_string(res.body().data());
 
     auto t2 = clock::now();
     std::chrono::duration<double> diff = t2 - t1; // seconds
