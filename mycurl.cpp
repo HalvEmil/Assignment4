@@ -306,7 +306,7 @@ int main(int argc, char* argv[]) {
     std::ofstream ofs(output_path, std::ios::binary);
     
     //std::cout << res << std::endl;
-    ofs << beast::buffers_to_string(res.body().data());
+    ofs << beast::buffers_to_string(res);
 
     auto t2 = clock::now();
     std::chrono::duration<double> diff = t2 - t1; // seconds
