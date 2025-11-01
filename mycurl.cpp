@@ -308,11 +308,11 @@ int main(int argc, char* argv[]) {
     // ofs << "HTTP/" << res.version() / 10 << "." << res.version() % 10
     //     << " " << res.result_int() << " " << res.reason() << std::endl;
 
-    for(auto const &field : res){
-        ofs << field.name_string() << ": " << field.value() << std::endl;
-    }
-
-    ofs << beast::buffers_to_string(res.body().data());
+    // for(auto const &field : res){
+    //     ofs << field.name_string() << ": " << field.value() << std::endl;
+    // }
+    ofs << res;
+    //ofs << beast::buffers_to_string(res.body().data());
 
     auto t2 = clock::now();
     std::chrono::duration<double> diff = t2 - t1; // seconds
