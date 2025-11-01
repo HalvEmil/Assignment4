@@ -24,6 +24,8 @@
 #include <sstream>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
+#include <boost/asio/ssl.hpp>
+#include <boost/beast/ssl.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
 
@@ -176,6 +178,49 @@ finalize_defaults:
     return true;
 }
 
+void request(Url url, net::io_context &ioc, tcp::resolver &resolver, beast::flat_buffer &buffer, http::response<http::dynamic_body> &res){
+     
+    if(url.scheme == "https"){
+        net::ssl::context ctx(net::ssl::context::sslv23_client);
+        boost::beast::ssl_stream<tcp::socket> stream(ioc, ctx);
+
+        auto const results = resolver.resolve(url.host, url.port);
+        net::connect(stream.next_layer(), results.begin(), results.end());
+
+        stream.handshake(net::ssl::stream_base::client);
+        
+        http::request<http::string_body> req{http::verb::get, url.path, 11};
+        req.set(http::field::host, url.host);
+        req.set(http::field::user_agent, "mycurl/1.0");
+
+        http::write(stream, req);
+
+        http::read(stream, buffer, res);
+        
+    }
+    else{
+        beast::tcp_stream stream(ioc);
+        
+        auto const results = resolver.resolve(url.host, url.port);
+        stream.connect(results);
+
+        http::request<http::string_body> req{http::verb::get, url.path, 11};
+        req.set(http::field::host, url.host);
+        req.set(http::field::user_agent, "mycurl/1.0");
+
+        http::write(stream, req);
+
+        // beast::flat_buffer buffer;
+        // http::response<http::dynamic_body> res;
+        http::read(stream, buffer, res);
+
+        beast::error_code ec;
+        stream.socket().shutdown(tcp::socket::shutdown_both, ec);
+    
+
+    }
+    
+}
 
 int main(int argc, char* argv[]) {
     bool cache_enabled = false;
@@ -225,29 +270,19 @@ int main(int argc, char* argv[]) {
     /* do stuff */
     int resp_body_size=0xFACCE;
 
+
     net::io_context ioc;
     tcp::resolver resolver(ioc);
-    beast::tcp_stream stream(ioc);
-
-    auto const results = resolver.resolve(url.host, url.port);
-
-    stream.connect(results);
-    
-    http::request<http::string_body> req{http::verb::get, url.path, 11};
-    req.set(http::field::host, url.host);
-    req.set(http::field::user_agent, "mycurl/1.0");
-
-    http::write(stream, req);
-
     beast::flat_buffer buffer;
     http::response<http::dynamic_body> res;
-    http::read(stream, buffer, res);
-
-    //int redirects = 0;
+        
+    request(url, ioc, resolver, buffer, res);
+    std::cout << res.base() << std::endl;
 
     while((res.result_int() == 301 || res.result_int() == 302) && redirects < max_redirects){
         auto location = res.base().at(http::field::location);
         std::cout << "redirecting " << location << std::endl;
+        
 
         Url newUrl;
         std::string error;
@@ -260,30 +295,23 @@ int main(int argc, char* argv[]) {
         beast::tcp_stream stream(ioc);
         auto const results = resolver.resolve(newUrl.host, newUrl.port);
 
-        stream.connect(results);
-
-        http::request<http::string_body> req{http::verb::get, url.path, 11};
-        req.set(http::field::host, url.host);
-        req.set(http::field::user_agent, "mycurl/1.0");
-
-        http::write(stream, req);
-
-        beast::flat_buffer buffer;
-        http::read(stream, buffer, res);
+        request(newUrl, ioc, resolver, buffer, res);
+        std::cout << res.base() << std::endl;
 
 
         redirects++;
     }
 
-    std::cout << res << std::endl;
-    beast::error_code ec;
-    stream.socket().shutdown(tcp::socket::shutdown_both, ec);
+    fs::path output_path(output_file);
+    std::ofstream ofs(output_path, std::ios::binary);
     
+    //std::cout << res << std::endl;
+    ofs << beast::buffers_to_string(res.body().data());
 
     auto t2 = clock::now();
     std::chrono::duration<double> diff = t2 - t1; // seconds
     std::cout << std::fixed << std::setprecision(6);
-    std::cout << now_local_yy_mm_dd_hh_mm_ss() << " " << url_str << " " << resp_body_size << " [bytes] " << diff.count()
+    std::cout << now_local_yy_mm_dd_hh_mm_ss() << " " << url_str << " " << res.body().size() << " [bytes] " << diff.count()
               << " [s] " << (8*resp_body_size/diff.count())/1e6 << " [Mbps]\n";
 
 
