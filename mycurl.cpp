@@ -280,7 +280,7 @@ int main(int argc, char* argv[]) {
     std::cout << res.base() << std::endl;
 
     while((res.result_int() == 301 || res.result_int() == 302) && redirects < max_redirects){
-        if(redirects >= max_redirects - 1){
+        if(redirects >= max_redirects ){
         std::cerr << "ERROR: To many redirects" << std::endl;
         return EXIT_FAILURE;
         }
