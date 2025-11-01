@@ -280,6 +280,11 @@ int main(int argc, char* argv[]) {
     std::cout << res.base() << std::endl;
 
     while((res.result_int() == 301 || res.result_int() == 302) && redirects < max_redirects){
+        if(redirects >= max_redirects - 1){
+        std::cerr << "ERROR: To many redirects" << std::endl;
+        return EXIT_FAILURE;
+        }
+
         auto location = res.base().at(http::field::location);
         std::cout << "redirecting " << location << std::endl;
         
@@ -305,11 +310,7 @@ int main(int argc, char* argv[]) {
         redirects++;
     }
 
-    if(redirects == max_redirects - 1){
-        std::cerr << "ERROR: To many redirects" << std::endl;
-        return EXIT_FAILURE;
-    }
-
+    
     fs::path output_path(output_file);
     std::ofstream ofs(output_path, std::ios::binary);
     // //std::cout << res << std::endl;
