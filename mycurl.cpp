@@ -204,6 +204,8 @@ void request(Url url, net::io_context &ioc, tcp::resolver &resolver, beast::flat
         auto const results = resolver.resolve(url.host, url.port);
         stream.connect(results);
 
+        
+
         http::request<http::string_body> req{http::verb::get, url.path, 11};
         req.set(http::field::host, url.host);
         req.set(http::field::user_agent, "mycurl/1.0");
@@ -276,8 +278,14 @@ int main(int argc, char* argv[]) {
     beast::flat_buffer buffer;
     http::response<http::dynamic_body> res;
         
-    request(url, ioc, resolver, buffer, res);
-    std::cout << res.base() << std::endl;
+    try{
+
+        request(url, ioc, resolver, buffer, res);
+        std::cout << res.base() << std::endl;
+    }catch(const std::exception &e){
+        std::cout << "ERROR: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
 
     while((res.result_int() == 301 || res.result_int() == 302)){
         //std::cout << "redirects: " << redirects << std::endl;
@@ -305,8 +313,14 @@ int main(int argc, char* argv[]) {
         buffer.consume(buffer.size());
         res = {};
 
-        request(newUrl, ioc, resolver, buffer, res);
-        std::cout << res.base() << std::endl;
+        try{
+            request(url, ioc, resolver, buffer, res);
+            std::cout << res.base() << std::endl;
+        }
+            catch(const std::exception &e){
+            std::cout << "ERROR: " << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
 
 
     }
