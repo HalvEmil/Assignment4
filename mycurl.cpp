@@ -295,6 +295,9 @@ int main(int argc, char* argv[]) {
         beast::tcp_stream stream(ioc);
         auto const results = resolver.resolve(newUrl.host, newUrl.port);
 
+        buffer.consume(buffer.size());
+        res = {};
+
         request(newUrl, ioc, resolver, buffer, res);
         std::cout << res.base() << std::endl;
 
